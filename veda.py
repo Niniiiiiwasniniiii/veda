@@ -41,7 +41,7 @@ print("=== AI Assistant Chatbot ===")
 print("1. General AI")
 print("2. Gym Trainer")
 
-choice = input("Choose an option (1 or 2): ")
+choice = input("Choose an option (v3da or v3da gym mode): ")
 
 while True:
     question = input("\nAsk a question (or type 'exit' to quit): ")
@@ -50,10 +50,10 @@ while True:
         print("Goodbye!")
         break
 
-    if choice == "1":
+    if choice == "v3da":
         print("\nAI:", ask_ai(question))
 
-    elif choice == "2":
+    elif choice == "veda gym mode":
         print("\nGym Trainer:", gym_trainer(question))
 
     else:
