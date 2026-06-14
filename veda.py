@@ -1,5 +1,5 @@
-import streamlit as st
-import groq 
+ import streamlit as st
+from groq import Groq
 
 # -----------------------------
 # PAGE CONFIG
@@ -8,6 +8,13 @@ st.set_page_config(
     page_title="V3DA AI",
     page_icon="🤖",
     layout="wide"
+)
+
+# -----------------------------
+# GROQ CLIENT
+# -----------------------------
+client = Groq(
+    api_key=st.secrets["GROQ_API_KEY"]
 )
 
 # -----------------------------
@@ -26,8 +33,12 @@ mode = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.info(
-    "Powered by Mistral + Ollama"
+    "Powered by Groq + Llama 3.3"
 )
+
+if st.sidebar.button("🗑️ Clear Chat"):
+    st.session_state.messages = []
+    st.rerun()
 
 # -----------------------------
 # TITLE
@@ -41,7 +52,6 @@ st.caption("Your intelligent AI companion")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display previous messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
@@ -92,7 +102,6 @@ prompt = st.chat_input("Ask V3DA anything...")
 
 if prompt:
 
-    # Basic safety checks
     if len(prompt) > 500:
         st.warning("Please keep messages under 500 characters.")
         st.stop()
@@ -100,7 +109,6 @@ if prompt:
     if not prompt.strip():
         st.stop()
 
-    # Save user message
     st.session_state.messages.append(
         {
             "role": "user",
@@ -120,7 +128,6 @@ if prompt:
             }
         ]
 
-        # Add conversation history
         for msg in st.session_state.messages:
             messages.append(
                 {
@@ -129,12 +136,13 @@ if prompt:
                 }
             )
 
-        response = ollama.chat(
-            model="mistral",
-            messages=messages
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            temperature=0.7
         )
 
-        reply = response["message"]["content"]
+        reply = response.choices[0].message.content
 
         with st.chat_message("assistant"):
             st.markdown(reply)
@@ -148,5 +156,9 @@ if prompt:
 
     except Exception as e:
         st.error(
-            "Unable to connect to Ollama. Make sure Ollama is running."
+            f"Unable to connect to Groq AI: {e}"
         )
+
+
+
+     
