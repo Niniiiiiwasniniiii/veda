@@ -1,61 +1,152 @@
+import streamlit as st
 import ollama
 
-def ask_ai(question):
-    response = ollama.chat(
-        model='mistral',
-        messages=[
-            {
-                'role': 'user',
-                'content': question
-            }
-        ]
-    )
-    return response['message']['content']
+# -----------------------------
+# PAGE CONFIG
+# -----------------------------
+st.set_page_config(
+    page_title="V3DA AI",
+    page_icon="🤖",
+    layout="wide"
+)
 
+# -----------------------------
+# SIDEBAR
+# -----------------------------
+st.sidebar.title("🤖 V3DA AI")
 
-def gym_trainer(question):
-    response = ollama.chat(
-        model='mistral',
-        messages=[
-            {
-                'role': 'system',
-                'content': """
-You are a gym trainer.
+mode = st.sidebar.radio(
+    "Choose Mode",
+    [
+        "🧠 V3DA Chat",
+        "💪 V3DA Fit",
+        "🎓 V3DA Study"
+    ]
+)
+
+st.sidebar.markdown("---")
+st.sidebar.info(
+    "Powered by Mistral + Ollama"
+)
+
+# -----------------------------
+# TITLE
+# -----------------------------
+st.title("🤖 V3DA AI")
+st.caption("Your intelligent AI companion")
+
+# -----------------------------
+# CHAT HISTORY
+# -----------------------------
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Display previous messages
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# -----------------------------
+# SYSTEM PROMPTS
+# -----------------------------
+def get_system_prompt(mode):
+
+    if mode == "💪 V3DA Fit":
+        return """
+You are V3DA Fit.
 
 Rules:
-- Be polite and friendly
-- Keep answers short and to the point
-- Give diet plans for weight loss when asked
+- Be friendly and motivating.
+- Keep answers practical.
+- Suggest healthy workout plans.
+- Suggest healthy diet plans.
+- Keep responses concise.
+- Never give dangerous medical advice.
 """
-            },
+
+    elif mode == "🎓 V3DA Study":
+        return """
+You are V3DA Study.
+
+Rules:
+- Help students understand concepts.
+- Explain step by step.
+- Use simple language.
+- Give examples whenever possible.
+- Keep answers concise.
+"""
+
+    return """
+You are V3DA AI.
+
+Rules:
+- Be helpful and professional.
+- Give accurate answers.
+- Keep answers easy to understand.
+"""
+
+# -----------------------------
+# USER INPUT
+# -----------------------------
+prompt = st.chat_input("Ask V3DA anything...")
+
+if prompt:
+
+    # Basic safety checks
+    if len(prompt) > 500:
+        st.warning("Please keep messages under 500 characters.")
+        st.stop()
+
+    if not prompt.strip():
+        st.stop()
+
+    # Save user message
+    st.session_state.messages.append(
+        {
+            "role": "user",
+            "content": prompt
+        }
+    )
+
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    try:
+
+        messages = [
             {
-                'role': 'user',
-                'content': question
+                "role": "system",
+                "content": get_system_prompt(mode)
             }
         ]
-    )
-    return response['message']['content']
 
+        # Add conversation history
+        for msg in st.session_state.messages:
+            messages.append(
+                {
+                    "role": msg["role"],
+                    "content": msg["content"]
+                }
+            )
 
-print("=== AI Assistant Chatbot ===")
-print("1. General AI")
-print("2. Gym Trainer")
+        response = ollama.chat(
+            model="mistral",
+            messages=messages
+        )
 
-choice = input("Choose an option (v3da or v3da gym mode): ")
+        reply = response["message"]["content"]
 
-while True:
-    question = input("\nAsk a question (or type 'exit' to quit): ")
+        with st.chat_message("assistant"):
+            st.markdown(reply)
 
-    if question.lower() == "exit":
-        print("Goodbye!")
-        break
+        st.session_state.messages.append(
+            {
+                "role": "assistant",
+                "content": reply
+            }
+        )
 
-    if choice == "v3da":
-        print("\nAI:", ask_ai(question))
-
-    elif choice == "veda gym mode":
-        print("\nGym Trainer:", gym_trainer(question))
-
-    else:
-        print("Invalid choice.")
-        break
+    except Exception as e:
+        st.error(
+            "Unable to connect to Ollama. Make sure Ollama is running."
+        )
