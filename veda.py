@@ -1,5 +1,5 @@
 import streamlit as st
-import ollama
+import groq 
 
 # -----------------------------
 # PAGE CONFIG
